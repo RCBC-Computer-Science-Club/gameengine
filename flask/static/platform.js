@@ -6,27 +6,22 @@ h_ is for 'html', these are functions that affect the implementation (such as th
 due to javascript's fun & exciting scoping, should probably try to avoid names that the framework user might use in their code
 */
 
-import { programStart, programUpdate, programEnd } from './program/main.js';
+import { programStart, programUpdate, programEnd, audioImports } from './program/main.js';
 import { generateText } from './text.js';
 
-console.log("This file is in a temporary location!");
 console.log("RCBC Computer Science Club Microplatform");
 
 let canvasID = "viewport" // id of the html element
-
 let Inputs = []; // an array of pressed inputs
-
 let currentMousePos = [0, 0];
 
 // use 256x256 as a default
 export let p_x = 256;
 export let p_y = 256;
-
 export let viewbuffer = Array(p_x * p_y);
 
 let lastDrawTime = 0;
 let frameRateLimit = 60;
-
 let frameCount = 0;
 
 let p_background = "black";
@@ -34,6 +29,14 @@ let p_background = "black";
 let platformDebug = false;
 
 export let tileResolution = 16;
+
+//Audio
+let audioContext = new AudioContext();
+let audioFiles = {}; //dict to contain filenames of audio files, and their decoded audio data
+    //"literalFileName.mp3": AudioBuffer object (as obtained from decodeAudioData)
+let audioNames = {}; //more friendly names as defined by the programmer for their audio files
+    //"jump effect": "literalFileName.mp3"
+
 
 const stockPalettes = { "bw": ["#000000", "#111111", "#222222", "#333333", "#444444", "#555555", "#666666", "#777777", "#888888", "#999999", "#AAAAAA", "#BBBBBB", "#CCCCCC", "#DDDDDD", "#EEEEEE", "#FFFFFF"] };
 
@@ -104,12 +107,25 @@ function isAsyncFunction(fn) {
 export async function setup() {
     setResolution(256, 256);
     generateText();
+   
+    console.log("Importing audio");
+    for (let i = 0; i < Object.entries(audioImports).length; i++){
+        let thisFile = Object.entries(audioImports)[i];
+        await importAudioFile(thisFile[0], thisFile[1]);
+    }
+    console.log("Audio import complete");
+
+    //unconditional sound-enable, for situations where in-game sound is desired regardless of whether the user has made an in-game input yet
+    document.getElementById("soundToggle").onclick = () => playSound("");    
+
     if (isAsyncFunction(programStart)) {
         await programStart();
-    } else {
+    } 
+    else {
         programStart();
     }
 }
+
 
 /**
  * Start the main loop
@@ -192,6 +208,31 @@ export function getInputs() {
 */
 export function getMousePosViewport() {
     return currentMousePos;
+}
+
+//Import an audio file that exists in /static/program/ and decode it (places it in audioFiles and audioNames as is relevant to those dicts).
+//On success, audio exists in audioFiles as an AudioBuffer object 
+export async function importAudioFile(fileName, usefulName){
+    let response = await fetch("/static/program/" + fileName);
+    if (response.status != 200){
+        console.log("Could not import " + fileName + " received status code " + response.status);
+        return;
+    }
+    
+    audioFiles[fileName] = await audioContext.decodeAudioData(await response.arrayBuffer());
+    audioNames[usefulName] = fileName;
+    console.log("Imported " + fileName + " as \"" + usefulName + "\"");
+}
+
+//Play an existing imported sound by passing the "usefulName" that was passed when the sound was imported
+//Pass an empty string to play nothing (use this for dedicated audio-enables, ie an 'enable sound' button)
+export function playSound(usefulName){
+    let outputBuffer = audioContext.createBufferSource();
+    if(usefulName != ""){
+        outputBuffer.buffer = audioFiles[audioNames[usefulName]];
+    }
+    outputBuffer.connect(audioContext.destination);
+    outputBuffer.start()
 }
 
 // event listeners to handle input
