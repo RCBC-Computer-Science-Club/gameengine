@@ -3,6 +3,11 @@ import { drawRect, drawEllipse, drawRhombus, drawTriangle, drawLine, drawPolygon
 import { drawText } from '../text.js';
 import { loadImage, drawImage } from '../image.js';
 
+//Define audio files to be imported here
+//"fileName.mp3": "useful name"
+//where "fileName.mp3" is a literal filename of an audio file in /static/program/ and "useful name" is any name the programmer would like to use to refer to it (ala a variable name)
+export let audioImports = {};
+
 let demo = 0;
 let baseFrame = 0;
 let currentFrame = 0;
