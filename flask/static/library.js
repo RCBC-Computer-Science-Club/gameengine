@@ -22,6 +22,7 @@ export const collisionObjects = {
     COLLECTIBLE: "collectible",
 }
 
+//A class to hold any bitmap object
 export class PixelBuffer {
     //where x and y are the dimensions, and 'buffer' is an array of values
     constructor(x, y, buffer) {
@@ -29,7 +30,6 @@ export class PixelBuffer {
         this.y = y;
         this.buffer = buffer;
     }
-
 }
 
 //A framework for nearly any game object
@@ -246,7 +246,6 @@ export function isRayColliding(ray, object, collider) {
 //A relationship of GameObjects, or in other words, a virtual viewport keeping track of where things are relative to each other
 //This does NOT track z-position (ie layering), to do that use multiple scenes and render them in the order desired. The priority of overlapping objects is thus undefined
 export class Scene {
-    //Note: Once matrix operations are ready, the matrixSection() function will be used to get the 'viewable' section of a given scene
     constructor() {
         this.GameObjects = [];
         this.originX = 0;
@@ -258,6 +257,32 @@ export class Scene {
         for (let i = 0; i < this.GameObjects.length; i++) {
             this.GameObjects[i].viewportX -= this.originX;
             this.GameObjects[i].viewportY -= this.originY;
+        }
+    }
+}
+
+//Timer class. Calls a user-supplied callback every 'interval' amount of time 
+export class Timer {
+    //Interval == time in milliseconds
+    //countByCalls == instead of counting time, count the sheer number of calls to the update function (useful if you're counting specific occurrences of something, or literal frame updates)
+    constructor(interval, callback = () => {}, countByCalls = false){
+        this.interval = interval;
+        this.elapsed = 0;
+        this.countByCalls = countByCalls;
+        this.callback = callback;
+    }
+
+    update(dt){
+        if (this.countByCalls){
+            this.elapsed++; 
+        }
+        else{
+            this.elapsed += dt;
+        }
+
+        if (this.elapsed >= this.interval){
+            this.elapsed = 0;
+            this.callback();
         }
     }
 }
